@@ -224,7 +224,7 @@ for i in range(1,101):
 
     time.Stop()
     elapsed = time.RealTime()
-    print("Time elapsed: ",elapsed)
+    print("Time elapsed: ",elapsed, " s")
 
     time_list.append(elapsed)
 

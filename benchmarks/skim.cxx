@@ -331,7 +331,7 @@ int main() {
   outfile << "Time" << std::endl;
 
   for (int i = 1; i < 101; i++) {
-    std::cout << "Skimming: Run %i", i << std::endl;
+    std::cout << "Skimming: Run " << i << std::endl;
     TStopwatch time;
     time.Start();
 
@@ -352,7 +352,7 @@ int main() {
     }
     time.Stop();
     auto elapsed = time.RealTime();
-    std::cout << "Time elapsed %f", elapsed << std::endl;
+    std::cout << "Time elapsed: " << elapsed << " s" << std::endl;
     outfile << elapsed << std::endl;
   }
 
