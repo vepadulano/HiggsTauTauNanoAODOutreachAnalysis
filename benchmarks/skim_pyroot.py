@@ -13,8 +13,8 @@
 # RDataFrame API functions and any other configuration variable.
 
 import ROOT
-import PyRDF
 import math # needed for floating point remainder
+
 
 # Base path to local filesystem or to EOS containing the datasets
 samplesBasePath = ("root://eospublic.cern.ch//eos/opendata/cms/upload/stefan/"
@@ -192,15 +192,13 @@ def main():
     The function loops over all required samples, reduces the content to the
     interesting events and writes them to new files.
     """
-    PyRDF.use("spark")
-    PyRDF.include_headers("skim.h")
+    ROOT.ROOT.EnableImplicitMT(4)
+    ROOT.gInterpreter.Declare('#include "skim.h"')
 
     for sample in sampleNames:
         print(">>> Process sample {}:\n".format(sample))
-        time = ROOT.TStopwatch()
-        time.Start()
 
-        df = PyRDF.RDataFrame("Events", samplesBasePath + sample + ".root")
+        df = ROOT.RDataFrame("Events", samplesBasePath + sample + ".root")
         print("Number of events: {}\n".format(df.Count().GetValue()))
 
         df2 = MinimalSelection(df)
@@ -215,8 +213,23 @@ def main():
         out_file = sample + "Skim.root"
         df9.Snapshot("Events", out_file, final_variables_vec)
 
-        time.Stop()
-        time.Print()
+time_list = []
 
-if __name__ == "__main__":
+for i in range(1,101):
+    print("Skimming: Run {}".format(i))
+    time = ROOT.TStopwatch()
+    time.Start()
+
     main()
+
+    time.Stop()
+    elapsed = time.RealTime()
+    print("Time elapsed: ",elapsed)
+
+    time_list.append(elapsed)
+
+    df_tmp = pd.DataFrame(data={"Time":time_list})
+    df_tmp.to_csv("higgstautau_skim_pyroot_multithreaded.csv", sep = ",", index = False)
+
+time_df = pd.DataFrame(data={"Time":time_list})
+time_df.to_csv("higgstautau_skim_pyroot_multithreaded.csv", sep = ",", index = False)
