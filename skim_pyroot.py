@@ -13,8 +13,8 @@
 # RDataFrame API functions and any other configuration variable.
 
 import ROOT
-import PyRDF
 import math # needed for floating point remainder
+
 
 # Base path to local filesystem or to EOS containing the datasets
 samplesBasePath = ("root://eospublic.cern.ch//eos/opendata/cms/upload/stefan/"
@@ -192,15 +192,15 @@ def main():
     The function loops over all required samples, reduces the content to the
     interesting events and writes them to new files.
     """
-    PyRDF.use("spark")
-    PyRDF.include_headers("skim.h")
+    ROOT.ROOT.EnableImplicitMT()
+    ROOT.gInterpreter.Declare('#include "skim.h"')
 
     for sample in sampleNames:
         print(">>> Process sample {}:\n".format(sample))
         time = ROOT.TStopwatch()
         time.Start()
 
-        df = PyRDF.RDataFrame("Events", samplesBasePath + sample + ".root")
+        df = ROOT.RDataFrame("Events", samplesBasePath + sample + ".root")
         print("Number of events: {}\n".format(df.Count().GetValue()))
 
         df2 = MinimalSelection(df)
@@ -212,10 +212,13 @@ def main():
         df8 = CheckGeneratorTaus(df7, sample)
         df9 = AddEventWeight(df8, sample)
 
+        report = df9.Report()
+
         out_file = sample + "Skim.root"
         df9.Snapshot("Events", out_file, final_variables_vec)
 
         time.Stop()
+        report.Print()
         time.Print()
 
 if __name__ == "__main__":

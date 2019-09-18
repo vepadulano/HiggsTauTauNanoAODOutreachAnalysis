@@ -197,11 +197,8 @@ def main():
 
     for sample in sampleNames:
         print(">>> Process sample {}:\n".format(sample))
-        time = ROOT.TStopwatch()
-        time.Start()
 
         df = PyRDF.RDataFrame("Events", samplesBasePath + sample + ".root")
-        print("Number of events: {}\n".format(df.Count().GetValue()))
 
         df2 = MinimalSelection(df)
         df3 = FindGoodMuons(df2)
@@ -215,8 +212,23 @@ def main():
         out_file = sample + "Skim.root"
         df9.Snapshot("Events", out_file, final_variables_vec)
 
-        time.Stop()
-        time.Print()
+time_list = []
 
-if __name__ == "__main__":
+for i in range(1,101):
+    print("Skimming: Run {}".format(i))
+    time = ROOT.TStopwatch()
+    time.Start()
+
     main()
+
+    time.Stop()
+    elapsed = time.RealTime()
+    print("Time elapsed: ",elapsed)
+
+    time_list.append(elapsed)
+
+    df_tmp = pd.DataFrame(data={"Time":time_list})
+    df_tmp.to_csv("higgstautau_skim_pyrdf_spark.csv", sep = ",", index = False)
+
+time_df = pd.DataFrame(data={"Time":time_list})
+time_df.to_csv("higgstautau_skim_pyrdf_spark.csv", sep = ",", index = False)

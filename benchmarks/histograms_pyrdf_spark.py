@@ -8,7 +8,6 @@
 
 import ROOT
 import PyRDF
-ROOT.gROOT.SetBatch(True)
 
 
 # Declare the range of the histogram for each variable
@@ -89,10 +88,7 @@ def filterGenMatch(df, label):
 # which is used to estimate the contribution of QCD events producing the muon-tau
 # pair in the final state.
 def main():
-    # Set up multi-threading capability of ROOT
-    ROOT.ROOT.EnableImplicitMT()
-    poolSize = ROOT.ROOT.GetImplicitMTPoolSize()
-    print("Pool size: {}".format(poolSize))
+    PyRDF.use("spark")
 
     # Create output file
     tfile = ROOT.TFile("histograms.root", "RECREATE")
@@ -124,7 +120,6 @@ def main():
         hists = {}
         for variable in variables:
             hists[variable] = bookHistogram(df1, variable, ranges[variable])
-        report1 = df1.Report()
 
         # Book histograms for the control region used to estimate the QCD contribution
         df2 = df.Filter("q_1*q_2>0", "Control region for QCD estimation")
@@ -132,7 +127,6 @@ def main():
         hists_cr = {}
         for variable in variables:
             hists_cr[variable] = bookHistogram(df2, variable, ranges[variable])
-        report2 = df2.Report()
 
         # Write histograms to output file
         for variable in variables:
@@ -140,14 +134,25 @@ def main():
         for variable in variables:
             writeHistogram(hists_cr[variable], "{}_{}_cr".format(label, variable))
 
-        # Print cut-flow report
-        print("Cut-flow report (signal region):")
-        report1.Print()
-        print("Cut-flow report (control region):")
-        report2.Print()
-
     tfile.Close()
 
+time_list = []
 
-if __name__ == "__main__":
+for i in range(1,101):
+    print("Writing histograms: Run {}".format(i))
+    time = ROOT.TStopwatch()
+    time.Start()
+
     main()
+
+    time.Stop()
+    elapsed = time.RealTime()
+    print("Time elapsed: ",elapsed)
+
+    time_list.append(elapsed)
+
+    df_tmp = pd.DataFrame(data={"Time":time_list})
+    df_tmp.to_csv("higgstautau_histo_pyrdf_spark.csv", sep = ",", index = False)
+
+time_df = pd.DataFrame(data={"Time":time_list})
+time_df.to_csv("higgstautau_histo_pyrdf_spark.csv", sep = ",", index = False)
