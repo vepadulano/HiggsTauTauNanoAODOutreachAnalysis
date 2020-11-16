@@ -4,10 +4,10 @@
 # and for each physics process resulting into the final state with a muon and a
 # tau. Then, the resulting histograms are passed to the plotting step, which
 # combines the histograms so that we can study the physics of the decay.
-
+import PyRDF
 
 import ROOT
-import PyRDF
+ROOT.gROOT.SetBatch(True)
 
 
 # Declare the range of the histogram for each variable
@@ -56,7 +56,8 @@ ranges = {
 
 # Book a histogram for a specific variable
 def bookHistogram(df, variable, range_):
-    return df.Histo1D(ROOT.ROOT.RDF.TH1DModel(variable, variable, range_[0], range_[1], range_[2]),\
+    return df.Histo1D(ROOT.ROOT.RDF.TH1DModel(variable, variable, range_[0],
+                                              range_[1], range_[2]),
                       variable, "weight")
 
 
@@ -70,9 +71,9 @@ def writeHistogram(h, name):
 #
 # See the skimming step for further details about this variable.
 def filterGenMatch(df, label):
-    if label is "ZTT":
+    if label == "ZTT":
         return df.Filter("gen_match == true")
-    elif label is "ZLL":
+    elif label == "ZLL":
         return df.Filter("gen_match == false")
     else:
         return df
@@ -82,11 +83,11 @@ def filterGenMatch(df, label):
 #
 # The function loops over the outputs from the skimming step and produces the
 # required histograms for the final plotting.
-# Note that we perform a set of secondary selections on the skimmed dataset. First,
-# we perform a second reduction with the baseline selection to a signal-enriched
-# part of the dataset. Second, we select besides the signal region a control region
-# which is used to estimate the contribution of QCD events producing the muon-tau
-# pair in the final state.
+# Note that we perform a set of secondary selections on the skimmed dataset.
+# First, we perform a second reduction with the baseline selection to a
+# signal-enriched part of the dataset. Second, we select besides the signal
+# region a control region which is used to estimate the contribution of QCD
+# events producing the muon-tau pair in the final state.
 def main():
     PyRDF.use("spark")
 
@@ -96,32 +97,36 @@ def main():
 
     # Loop through skimmed datasets and produce histograms of variables
     for name, label in [
-            ("GluGluToHToTauTau", "ggH"),
-            ("VBF_HToTauTau", "qqH"),
-            ("W1JetsToLNu", "W1J"),
-            ("W2JetsToLNu", "W2J"),
-            ("W3JetsToLNu", "W3J"),
-            ("TTbar", "TT"),
-            ("DYJetsToLL", "ZLL"),
-            ("DYJetsToLL", "ZTT"),
-            ("Run2012B_TauPlusX", "dataRunB"),
-            ("Run2012C_TauPlusX", "dataRunC"),
-        ]:
+        ("GluGluToHToTauTau", "ggH"),
+        ("VBF_HToTauTau", "qqH"),
+        ("W1JetsToLNu", "W1J"),
+        ("W2JetsToLNu", "W2J"),
+        ("W3JetsToLNu", "W3J"),
+        ("TTbar", "TT"),
+        ("DYJetsToLL", "ZLL"),
+        ("DYJetsToLL", "ZTT"),
+        ("Run2012B_TauPlusX", "dataRunB"),
+        ("Run2012C_TauPlusX", "dataRunC"),
+    ]:
         print(">>> Process skim {}".format(name))
 
+        filenames = [filename for filename in os.listdir() if name in filename]
         # Load skimmed dataset and apply baseline selection
-        df = PyRDF.RDataFrame("Events", name + "Skim.root")\
-                      .Filter("mt_1<30", "Muon transverse mass cut for W+jets suppression")\
-                      .Filter("iso_1<0.1", "Require isolated muon for signal region")
+        df = PyRDF.RDataFrame("Events", filenames).Filter(
+            "mt_1<30",
+            "Muon transverse mass cut for W+jets suppression")\
+            .Filter("iso_1<0.1", "Require isolated muon for signal region")
 
         # Book histograms for the signal region
-        df1 = df.Filter("q_1*q_2<0", "Require opposited charge for signal region")
+        df1 = df.Filter("q_1*q_2<0",
+                        "Require opposited charge for signal region")
         df1 = filterGenMatch(df1, label)
         hists = {}
         for variable in variables:
             hists[variable] = bookHistogram(df1, variable, ranges[variable])
 
-        # Book histograms for the control region used to estimate the QCD contribution
+        # Book histograms for the control region used to estimate the QCD
+        # contribution
         df2 = df.Filter("q_1*q_2>0", "Control region for QCD estimation")
         df2 = filterGenMatch(df2, label)
         hists_cr = {}
@@ -132,7 +137,8 @@ def main():
         for variable in variables:
             writeHistogram(hists[variable], "{}_{}".format(label, variable))
         for variable in variables:
-            writeHistogram(hists_cr[variable], "{}_{}_cr".format(label, variable))
+            writeHistogram(hists_cr[variable], "{}_{}_cr".format(label,
+                                                                 variable))
 
     tfile.Close()
 
