@@ -13,14 +13,13 @@
 # RDataFrame API functions and any other configuration variable.
 
 import ROOT
-import math # needed for floating point remainder
-
 
 # Base path to local filesystem or to EOS containing the datasets
-samplesBasePath = ("root://eospublic.cern.ch//eos/opendata/cms/upload/stefan/"
-                   "AOD2NanoAODOutreachTool/HiggsTauTauNanoAODOutreachAnalysis/")
+samplesBasePath = ("root://eospublic.cern.ch/"
+                   "/eos/opendata/cms/derived-data/AOD2NanoAODOutreachTool/")
 
-# Names of the datasets to be found in the base path and processed for the analysis
+# Names of the datasets to be found in the base path and processed for the
+# analysis
 sampleNames = [
     "GluGluToHToTauTau",
     "VBF_HToTauTau",
@@ -35,12 +34,9 @@ sampleNames = [
 
 # Compute event weights to be used for the respective datasets
 # The event weight reweights the full dataset so that the sum of the weights
-# is equal to the expected number of events in data. The expectation is given by
-# multiplying the integrated luminosity of the data with the cross-section of
-# the process in the datasets divided by the number of simulated events.
-
-# const float integratedLuminosity = 4.412 * 1000.0; Run2012B only
-# const float integratedLuminosity = 7.055 * 1000.0; Run2012C only
+# is equal to the expected number of events in data. The expectation is given
+# by multiplying the integrated luminosity of the data with the cross-section
+# of the process in the datasets divided by the number of simulated events.
 integratedLuminosity = 11.467 * 1000.0  # Run2012B+C
 eventWeights = {
     "GluGluToHToTauTau": 19.6 / 476963.0 * integratedLuminosity,
@@ -54,15 +50,21 @@ eventWeights = {
     "Run2012C_TauPlusX": 1.0,
 }
 
+
 def MinimalSelection(df):
     """Perform a selection on the minimal requirements of an event."""
-    return df.Filter("HLT_IsoMu17_eta2p1_LooseIsoPFTau20 == true", "Passes trigger")\
-             .Filter("nMuon > 0", "nMuon > 0")\
-             .Filter("nTau > 0", "nTau > 0")
+    return df.Filter("HLT_IsoMu17_eta2p1_LooseIsoPFTau20 == true",
+                     "Passes trigger")\
+        .Filter("nMuon > 0", "nMuon > 0")\
+        .Filter("nTau > 0", "nTau > 0")
+
 
 def FindGoodMuons(df):
     """Find the interesting muons in the muon collection."""
-    return df.Define("goodMuons", "abs(Muon_eta) < 2.1 && Muon_pt > 17 && Muon_tightId == true")
+    return df.Define(
+        "goodMuons",
+        "abs(Muon_eta) < 2.1 && Muon_pt > 17 && Muon_tightId == true")
+
 
 def FindGoodTaus(df):
     """
@@ -75,6 +77,7 @@ def FindGoodTaus(df):
                       Tau_idDecayMode == true && Tau_idIsoTight == true && \
                       Tau_idAntiEleTight == true && Tau_idAntiMuTight == true")
 
+
 def FilterGoodEvents(df):
     """
     Reduce the dataset to the interesting events containing at least one
@@ -82,6 +85,7 @@ def FilterGoodEvents(df):
     """
     return df.Filter("Sum(goodTaus) > 0", "Event has good taus")\
              .Filter("Sum(goodMuons) > 0", "Event has good muons")
+
 
 def FindMuonTauPair(df):
     """
@@ -99,6 +103,7 @@ def FindMuonTauPair(df):
              .Define("idx_2", "pairIdx[1]")\
              .Filter("idx_1 != -1", "Valid muon in selected pair")\
              .Filter("idx_2 != -1", "Valid tau in selected pair")
+
 
 def DeclareVariables(df):
     """Declare variables to be studied in the analysis."""
@@ -127,7 +132,9 @@ def DeclareVariables(df):
                  "m_vis": "float(p4.M())",
                  "pt_vis": "float(p4.Pt())",
                  "npv": "PV_npvs",
-                 "goodJets": "Jet_puId == true && abs(Jet_eta) < 4.7 && Jet_pt > 30",
+                 "goodJets": "Jet_puId == true\
+                              && abs(Jet_eta) < 4.7\
+                              && Jet_pt > 30",
                  "njets": "Sum(goodJets)",
                  "jpt_1": "get_first(Jet_pt, goodJets)",
                  "jeta_1": "get_first(Jet_eta, goodJets)",
@@ -152,10 +159,12 @@ def DeclareVariables(df):
 
     return df
 
+
 def AddEventWeight(df, sample):
     """ Add the event weight to the dataset as the column `weight`"""
     weight = eventWeights[sample]
     return df.Define("weight", "{}".format(weight))
+
 
 def CheckGeneratorTaus(df, sample):
     """
@@ -186,6 +195,7 @@ final_variables_vec = ROOT.vector('string')()
 for variable in final_variables_list:
     final_variables_vec.push_back(variable)
 
+
 def main():
     """
     Main function of the skimming step of the analysis
@@ -201,7 +211,6 @@ def main():
         time.Start()
 
         df = ROOT.RDataFrame("Events", samplesBasePath + sample + ".root")
-        print("Number of events: {}\n".format(df.Count().GetValue()))
 
         df2 = MinimalSelection(df)
         df3 = FindGoodMuons(df2)
@@ -220,6 +229,7 @@ def main():
         time.Stop()
         report.Print()
         time.Print()
+
 
 if __name__ == "__main__":
     main()
