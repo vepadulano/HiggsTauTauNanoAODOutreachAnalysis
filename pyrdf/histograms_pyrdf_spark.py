@@ -4,9 +4,11 @@
 # and for each physics process resulting into the final state with a muon and a
 # tau. Then, the resulting histograms are passed to the plotting step, which
 # combines the histograms so that we can study the physics of the decay.
-import PyRDF
+import os
 
+import PyRDF
 import ROOT
+
 ROOT.gROOT.SetBatch(True)
 
 
